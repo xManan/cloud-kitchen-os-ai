@@ -57,7 +57,8 @@ const DEFAULT_SETTINGS: Settings = {
   currency: "INR",
   locale: "en-IN",
   taxPct: 5,
-  model: DEFAULT_MODEL,
+  // Empty means "use the server default" (OPENROUTER_MODEL, else DEFAULT_MODEL).
+  model: "",
   agentMode: "ui",
   agentSpeed: "normal",
   openrouterKey: "",

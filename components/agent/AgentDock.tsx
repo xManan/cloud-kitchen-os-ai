@@ -26,7 +26,7 @@ const SUGGESTIONS: Record<string, string[]> = {
 export function AgentDock() {
   const open = useUI((s) => s.dockOpen);
   const setOpen = useUI((s) => s.setDockOpen);
-  const { entries, running, demoMode, webmcp, send, stop, clear, answerConfirm } = useAgent();
+  const { entries, running, demoMode, lastModel, webmcp, send, stop, clear, answerConfirm } = useAgent();
   const mode = useKitchen((s) => s.settings.agentMode);
   const updateSettings = useKitchen((s) => s.updateSettings);
   const pathname = usePathname();
@@ -110,7 +110,7 @@ export function AgentDock() {
               <Orb busy={running} dark />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-ink">Kitchen OS agent</div>
-                <div className="truncate text-xs text-ink-3">{running ? "Working" : demoMode ? "Demo mode: scripted replies" : "Ready"}</div>
+                <div className="truncate text-xs text-ink-3">{running ? "Working" : demoMode ? "Demo mode: scripted replies" : lastModel ? `Ready, using ${lastModel}` : "Ready"}</div>
               </div>
               <IconButton label="Clear conversation" onClick={clear} disabled={running}>
                 <Broom size={17} />

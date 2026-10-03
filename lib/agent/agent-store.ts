@@ -40,6 +40,8 @@ interface AgentState {
   transcript: LLMMessage[];
   running: boolean;
   demoMode: boolean;
+  /** Model that served the most recent turn, as reported by OpenRouter. */
+  lastModel: string | null;
   /** Number of tools registered with a WebMCP-capable browser (0 = not available). */
   webmcp: number;
   send: (text: string) => Promise<void>;
@@ -76,6 +78,7 @@ export const useAgent = create<AgentState>()((set, get) => {
     transcript: [],
     running: false,
     demoMode: false,
+    lastModel: null,
     webmcp: 0,
 
     clear: () => {
@@ -117,7 +120,7 @@ export const useAgent = create<AgentState>()((set, get) => {
           });
           const data = await res.json().catch(() => ({ error: `Server returned ${res.status}` }));
           if (!res.ok || data.error) throw new Error(data.error ?? `Request failed (${res.status})`);
-          set({ demoMode: !!data.mock });
+          set({ demoMode: !!data.mock, lastModel: data.mock ? null : (data.model ?? null) });
 
           const msg = data.message as { content?: string | null; tool_calls?: ToolCall[] };
           const calls = (msg.tool_calls ?? []).filter((c) => c?.function?.name);

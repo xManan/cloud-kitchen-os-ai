@@ -18,6 +18,8 @@ npm run dev                  # http://localhost:3000
 
 With no key, the agent runs in **demo mode**: a scripted planner that speaks the same tool-calling format, so the real loop, tools and UI driver all still run. You can also paste a key in **Settings**; it is stored only in your browser.
 
+To change the model, type an OpenRouter model id in **Settings → AI agent → Model**; it takes effect on the next message. Leave it empty to use `OPENROUTER_MODEL` from `.env.local` (default `anthropic/claude-sonnet-5.5`). A model set in Settings wins over the env value.
+
 Demo data is seeded per browser and kept in localStorage. Use **Settings → Reset demo data** to start fresh.
 
 ## Things to try

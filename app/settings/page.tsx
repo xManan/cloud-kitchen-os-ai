@@ -76,8 +76,8 @@ export default function SettingsPage() {
         <Panel>
           <PanelHeader title="AI agent" sub="Runs on OpenRouter. Without a key it falls back to a scripted demo." />
           <div className="grid grid-cols-1 gap-4 px-5 pb-5">
-            <Field label="Model" htmlFor="model" hint="Any OpenRouter model id that supports tool calling.">
-              <Input id="model" list="models" value={settings.model} onChange={(e) => update({ model: e.target.value })} className="font-mono text-[13px]" />
+            <Field label="Model" htmlFor="model" hint="Any OpenRouter model id that supports tool calling. Leave empty to use the server default.">
+              <Input id="model" list="models" value={settings.model} onChange={(e) => update({ model: e.target.value.trim() })} placeholder="Server default (OPENROUTER_MODEL)" className="font-mono text-[13px]" />
               <datalist id="models">
                 {MODELS.map((m) => (
                   <option key={m} value={m} />
