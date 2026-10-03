@@ -1,10 +1,12 @@
 "use client";
 
-import { Plus, Star, Ticket } from "@phosphor-icons/react";
+import { Lightning, Plus, Star, Ticket } from "@phosphor-icons/react";
+import { useState } from "react";
 import { CampaignForm, CouponForm, ReviewReplyForm } from "@/components/forms";
 import { SERIES } from "@/components/charts";
 import { AgentButton, PageFrame, relTime, shortDate, useNow } from "@/components/shell/Page";
-import { Badge, Button, PageHeader, Panel, PanelHeader, Switch, Table, Td, Th, cn, type Tone } from "@/components/ui";
+import { Badge, Button, PageHeader, Panel, PanelHeader, Segmented, Switch, Table, Td, Th, cn, type Tone } from "@/components/ui";
+import { TOPIC_LABEL, useReviewTagging } from "@/lib/agent/jev-features";
 import * as A from "@/lib/analytics";
 import { BRANDS } from "@/lib/data/seed";
 import { useMoney } from "@/lib/hooks";
@@ -20,6 +22,9 @@ export default function MarketingPage() {
   const money = useMoney();
   const openForm = useUI((s) => s.openForm);
   const now = useNow();
+  const tagging = useReviewTagging();
+  const jevOn = useKitchen((s) => s.settings.jevEnabled);
+  const [reviewFilter, setReviewFilter] = useState<"all" | "urgent">("all");
 
   // Timeline window: 30 days back to 30 days ahead.
   const start = now - 30 * DAY;
@@ -127,10 +132,36 @@ export default function MarketingPage() {
           <PanelHeader
             title="Reviews"
             sub={`${avgRating.toFixed(1)} average from ${d.reviews.length} recent reviews, ${unreplied.length} unanswered`}
-            actions={unreplied.some((r) => r.rating <= 2) ? <AgentButton prompt="Reply to every unanswered review rated 2 stars or lower. Be specific to what went wrong, apologise, and offer a credit on the next order.">Answer low ratings</AgentButton> : null}
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                {unreplied.some((r) => r.rating <= 2) && (
+                  <AgentButton prompt="Reply to every unanswered review that needs a reply today, most urgent first. Be specific to what went wrong, apologise, and offer a credit on the next order.">Answer urgent reviews</AgentButton>
+                )}
+                {jevOn && (
+                  <Segmented
+                    size="sm"
+                    label="Review filter"
+                    value={reviewFilter}
+                    onChange={setReviewFilter}
+                    options={[
+                      { value: "all", label: "All" },
+                      { value: "urgent", label: "Reply today" },
+                    ]}
+                  />
+                )}
+              </div>
+            }
           />
+          {jevOn && tagging && (
+            <p className="flex items-center gap-1.5 px-5 pb-3 text-xs text-ink-3">
+              <Lightning size={11} weight="fill" className="text-heat" />
+              Topics and urgency tagged by Jev{tagging.mock ? " (demo heuristic)" : ""} in {tagging.ms} ms
+            </p>
+          )}
           <ul className="divide-y divide-rule border-t border-rule">
-            {d.reviews.map((r) => (
+            {d.reviews
+              .filter((r) => reviewFilter === "all" || (!r.reply && (r.urgency ?? 0) >= 0.6))
+              .map((r) => (
               <li key={r.id} data-row-id={r.id} className="px-5 py-4">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="flex items-center gap-0.5" aria-label={`${r.rating} out of 5`}>
@@ -142,6 +173,8 @@ export default function MarketingPage() {
                   <span className="text-xs text-ink-3">
                     {A.brandName(r.brandId)} on {A.channelName(r.channel)}, {relTime(r.createdAt, now)}
                   </span>
+                  {jevOn && r.topic && <Badge tone={r.topic === "praise" ? "good" : "neutral"}>{TOPIC_LABEL[r.topic]}</Badge>}
+                  {jevOn && !r.reply && (r.urgency ?? 0) >= 0.6 && <Badge tone="bad">Reply today</Badge>}
                 </div>
                 <p className="mt-1.5 text-sm text-ink-2">{r.text}</p>
                 {r.reply ? (

@@ -57,6 +57,19 @@ user ─▶ AgentDock ─▶ agent loop (browser) ──POST /api/chat──▶ 
 
 Tools run in the browser because that is where the state, router and DOM live. The server only proxies the model call.
 
+## Jev fast path (System One)
+
+Not every request needs a big reasoning model. [Jev](https://openrouter.ai/docs/guides/community/typesafe-sdk) is TypeSafe's "System One" model. It doesn't write text: it answers yes/no and pick-one questions in a single pass, with a confidence score, in milliseconds. Kitchen OS calls it through OpenRouter's System One API (`POST /api/v1/systemone`, proxied by `app/api/jev/route.ts`), using the same `OPENROUTER_API_KEY`.
+
+Every chat message goes to Jev first (`lib/agent/jev.ts`):
+
+- **Fast path.** If the request is fully described by picks from things that exist (a page, a menu item, a campaign, a coupon, an unpaid invoice, a theme, or "today's status") and Jev is confident, the tool runs straight away. No big model is involved. The reply is tagged "Jev fast path, 140 ms".
+- **Tool shortlist.** Otherwise Jev flags which areas the request touches, and the big model gets only those tools (for example, "Jev picked 10 of 45 tools").
+- **Reviews.** On Marketing, each review is tagged with a topic and an urgency score, with a "Reply today" filter.
+- **Expenses.** The expense form suggests a category from the vendor and note as you type.
+
+Settings has a switch for this and a confidence threshold (default 80%). Below the threshold, requests go to the big model. Without a key, a keyword heuristic stands in for Jev so the demo still works.
+
 ## WebMCP
 
 [WebMCP](https://webmachinelearning.github.io/webmcp/) is a W3C Community Group draft. It lets a page register tools with `document.modelContext.registerTool()`; older Chrome builds used `navigator.modelContext`. Agents built into the browser can then call those tools. Support today: a Chrome origin trial, Edge behind a flag, nothing in Firefox or Safari.

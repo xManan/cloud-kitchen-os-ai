@@ -58,3 +58,36 @@ test("Typing indicator shows while the model is replying", async ({ page }) => {
   await expect(page.locator("[data-agent-dock]")).toContainText("Last 7 days", { timeout: 20_000 });
   await expect(status).toHaveCount(0);
 });
+
+test("Jev fast path handles a simple toggle without the big model", async ({ page }) => {
+  let chatCalls = 0;
+  await page.route("**/api/chat", async (route) => {
+    chatCalls++;
+    await route.continue();
+  });
+  await page.keyboard.press("/");
+  await page.getByRole("radio", { name: "Background" }).click();
+  await page.fill("#agent-input", "Mark garlic bread sold out");
+  await page.keyboard.press("Enter");
+  await expect(page.locator("[data-agent-dock]")).toContainText("Jev fast path", { timeout: 20_000 });
+  await expect(page.locator("[data-agent-dock]")).toContainText("Garlic bread is now marked sold out");
+  expect(chatCalls).toBe(0);
+  await page.goto("/menu");
+  await expect(page.locator('tr[data-row-id="m-garlicbread"]')).toContainText("Sold out");
+});
+
+test("Jev tags reviews and flags the ones that need a reply today", async ({ page }) => {
+  await page.goto("/marketing");
+  await expect(page.getByText("Topics and urgency tagged by Jev")).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("radio", { name: "Reply today" }).click();
+  await expect(page.locator('li[data-row-id="rv-2"]')).toContainText("Reply today");
+  await expect(page.locator('li[data-row-id="rv-1"]')).toHaveCount(0);
+});
+
+test("Jev suggests an expense category from the vendor", async ({ page }) => {
+  await page.goto("/finance");
+  await page.locator('[data-agent-open="expense"]').click();
+  await page.fill("#vendor", "CoolTech HVAC chiller repair");
+  await page.getByRole("button", { name: /Jev suggests Maintenance/ }).click();
+  await expect(page.locator("#category")).toHaveValue("Maintenance");
+});

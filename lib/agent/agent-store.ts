@@ -7,6 +7,7 @@ import { AgentAborted, abortRun, beginRun, hideCursor } from "./driver";
 import { compact, executeTool, stepTitle } from "./executor";
 import type { ExecMode } from "./registry";
 import { toOpenAITools } from "./registry";
+import { routeMessage, toolsByName } from "./jev";
 import { TOOLS } from "./tools";
 
 export interface StepInfo {
@@ -17,9 +18,18 @@ export interface StepInfo {
   error?: string;
 }
 
+/** Which engine answered a turn and how long it took, shown under the reply. */
+export interface TurnMeta {
+  engine: "jev" | "llm";
+  ms: number;
+  model?: string | null;
+  /** e.g. "Jev narrowed 45 tools to 12" */
+  note?: string;
+}
+
 export type Entry =
   | { id: string; role: "user"; text: string }
-  | { id: string; role: "assistant"; text: string }
+  | { id: string; role: "assistant"; text: string; meta?: TurnMeta }
   | { id: string; role: "step"; step: StepInfo }
   | { id: string; role: "confirm"; question: string; state: "pending" | "approved" | "denied" }
   | { id: string; role: "notice"; text: string; tone: "error" | "info" };
@@ -103,9 +113,35 @@ export const useAgent = create<AgentState>()((set, get) => {
       push({ id: uid(), role: "user", text });
       set((s) => ({ running: true, transcript: trim([...s.transcript, { role: "user", content: text }]) }));
       const ctl = beginRun();
-      const tools = toOpenAITools(TOOLS);
+      const turnStart = performance.now();
+      let tools = toOpenAITools(TOOLS);
+      let note: string | undefined;
 
       try {
+        // System One first: Jev either handles the request outright or narrows the tool list.
+        if (getKitchen().settings.jevEnabled) {
+          const route = await routeMessage(text, ctl.signal).catch((e) => {
+            if (ctl.signal.aborted) throw e;
+            console.warn("[jev] routing skipped:", e);
+            return null;
+          });
+          if (route?.fast) {
+            const id = uid();
+            const f = route.fast;
+            push({ id, role: "step", step: { tool: f.tool, title: stepTitle(f.tool, f.args), status: "running", mode: "read" } });
+            const out = await executeTool(f.tool, f.args, { via: "chat", confirm });
+            patchStep(id, { title: out.title, status: out.ok ? "done" : "error", mode: out.mode, error: out.error });
+            const reply = out.ok ? f.reply(out.result) : `That didn't go through: ${out.error}`;
+            push({ id: uid(), role: "assistant", text: reply, meta: { engine: "jev", ms: Math.round(performance.now() - turnStart), model: route.jev?.model, note: route.jev?.mock ? "demo heuristic" : undefined } });
+            set((s) => ({ transcript: [...s.transcript, { role: "assistant", content: reply }] }));
+            return;
+          }
+          if (route?.shortlist) {
+            tools = toOpenAITools(toolsByName(route.shortlist));
+            note = `Jev picked ${route.shortlist.length} of ${TOOLS.length} tools in ${route.jev?.ms ?? 0} ms`;
+          }
+        }
+
         for (let step = 0; step < MAX_STEPS; step++) {
           const { settings } = getKitchen();
           const res = await fetch("/api/chat", {
@@ -125,8 +161,11 @@ export const useAgent = create<AgentState>()((set, get) => {
           const msg = data.message as { content?: string | null; tool_calls?: ToolCall[] };
           const calls = (msg.tool_calls ?? []).filter((c) => c?.function?.name);
           set((s) => ({ transcript: [...s.transcript, { role: "assistant", content: msg.content ?? null, ...(calls.length ? { tool_calls: calls } : {}) }] }));
+          if (!calls.length) {
+            if (msg.content?.trim()) push({ id: uid(), role: "assistant", text: msg.content.trim(), meta: { engine: "llm", ms: Math.round(performance.now() - turnStart), model: data.mock ? "demo script" : (data.model ?? settings.model), note } });
+            break;
+          }
           if (msg.content?.trim()) push({ id: uid(), role: "assistant", text: msg.content.trim() });
-          if (!calls.length) break;
 
           for (const call of calls) {
             let args: Record<string, unknown> = {};

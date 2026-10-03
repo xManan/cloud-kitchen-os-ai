@@ -196,7 +196,12 @@ export interface Review {
   customerName: string;
   createdAt: string;
   reply?: string;
+  /** Set by Jev: what the review is about, and how likely it needs a reply today. */
+  topic?: ReviewTopic;
+  urgency?: number;
 }
+
+export type ReviewTopic = "late" | "cold" | "missing_item" | "portion" | "taste" | "packaging" | "praise" | "other";
 
 export interface Staff {
   id: string;
@@ -244,6 +249,12 @@ export interface Settings {
   agentMode: "ui" | "background";
   agentSpeed: "normal" | "fast";
   openrouterKey: string;
+  /** Route requests through Jev (System One) first for fast answers and tool shortlists. */
+  jevEnabled: boolean;
+  /** Jev model id on OpenRouter; empty uses the server default (JEV_MODEL, else jev-latest). */
+  jevModel: string;
+  /** Minimum Jev confidence before it acts without the big model. */
+  jevThreshold: number;
 }
 
 export interface ActivityEntry {

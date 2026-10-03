@@ -62,6 +62,9 @@ const DEFAULT_SETTINGS: Settings = {
   agentMode: "ui",
   agentSpeed: "normal",
   openrouterKey: "",
+  jevEnabled: true,
+  jevModel: "",
+  jevThreshold: 0.8,
 };
 
 export function buildSeed(now = new Date()): KitchenData {
@@ -135,6 +138,8 @@ export interface KitchenActions {
   createCoupon: (input: S.CouponInput, actor?: Actor) => Coupon;
   toggleCoupon: (couponId: string, active: boolean, actor?: Actor) => Coupon;
   replyToReview: (input: S.ReviewReplyInput, actor?: Actor) => Review;
+  /** System action: Jev's topic and urgency tags for a review (not logged as activity). */
+  tagReview: (reviewId: string, topic: Review["topic"], urgency: number) => void;
 
   addShift: (input: S.ShiftInput, actor?: Actor) => Shift;
   removeShift: (shiftId: string, actor?: Actor) => void;
@@ -419,6 +424,9 @@ export const useKitchen = create<KitchenStore>()(
           return updated;
         },
 
+        tagReview: (reviewId, topic, urgency) =>
+          set((s) => ({ reviews: s.reviews.map((r) => (r.id === reviewId ? { ...r, topic, urgency } : r)) })),
+
         addShift: (raw, actor = "user") => {
           const input = S.shiftSchema.parse(raw);
           const st = must(get().staff.find((x) => x.id === input.staffId), "Staff member");
@@ -449,6 +457,11 @@ export const useKitchen = create<KitchenStore>()(
     },
     {
       name: "kitchen-os-v1",
+      // Saved settings from older versions lack newer fields; fill them from the defaults.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<KitchenData>;
+        return { ...current, ...p, settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) } };
+      },
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => {

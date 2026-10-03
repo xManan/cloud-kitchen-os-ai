@@ -4,7 +4,7 @@ import { ArrowCounterClockwise, Eye, EyeSlash } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageFrame } from "@/components/shell/Page";
-import { Badge, Button, Field, Input, PageHeader, Panel, PanelHeader, Segmented, Select } from "@/components/ui";
+import { Badge, Button, Field, Input, PageHeader, Panel, PanelHeader, Segmented, Select, Switch } from "@/components/ui";
 import { useAgent } from "@/lib/agent/agent-store";
 import { TOOLS } from "@/lib/agent/tools";
 import { DEFAULT_MODEL, useKitchen } from "@/lib/store";
@@ -119,6 +119,31 @@ export default function SettingsPage() {
           </div>
         </Panel>
       </div>
+
+      <Panel>
+        <PanelHeader
+          title="Fast path with Jev"
+          sub="Jev is a System One model on OpenRouter: it picks from fixed options in a fraction of a second instead of writing text. It handles simple requests on its own, narrows the tool list for the big model, tags reviews and suggests expense categories."
+          actions={<Switch checked={settings.jevEnabled} onCheckedChange={(v) => update({ jevEnabled: v })} label="Use Jev fast path" />}
+        />
+        <div className="grid grid-cols-1 gap-4 px-5 pb-5 md:grid-cols-2">
+          <Field label="Jev model" htmlFor="jevModel" hint="Leave empty for the server default (JEV_MODEL, else jev-latest).">
+            <Input id="jevModel" value={settings.jevModel} onChange={(e) => update({ jevModel: e.target.value.trim() })} placeholder="jev-latest" className="font-mono text-[13px]" />
+          </Field>
+          <Field label="Act on its own above" htmlFor="jevThreshold" hint="Below this confidence, requests go to the big model instead.">
+            <Segmented
+              label="Jev confidence threshold"
+              value={String(settings.jevThreshold) as "0.7" | "0.8" | "0.9"}
+              onChange={(v) => update({ jevThreshold: Number(v) })}
+              options={[
+                { value: "0.7", label: "70%" },
+                { value: "0.8", label: "80%" },
+                { value: "0.9", label: "90%" },
+              ]}
+            />
+          </Field>
+        </div>
+      </Panel>
 
       <Panel>
         <PanelHeader

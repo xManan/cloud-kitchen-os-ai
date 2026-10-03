@@ -1,11 +1,11 @@
 "use client";
 
-import { ArrowUp, Broom, Check, CircleNotch, Minus, Stop, WarningCircle, Globe } from "@phosphor-icons/react";
+import { ArrowUp, Broom, Check, CircleNotch, Globe, Lightning, Minus, Stop, WarningCircle } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Button, IconButton, Segmented, cn } from "@/components/ui";
-import { useAgent, type Entry } from "@/lib/agent/agent-store";
+import { useAgent, type Entry, type TurnMeta } from "@/lib/agent/agent-store";
 import { useCursor } from "@/lib/agent/driver";
 import { useKitchen } from "@/lib/store";
 import { useUI } from "@/lib/ui-store";
@@ -214,6 +214,28 @@ export function AgentDock() {
   );
 }
 
+const seconds = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`);
+
+/** Which engine answered and how fast: the point of the System One fast path. */
+function MetaLine({ meta }: { meta: TurnMeta }) {
+  const model = meta.model?.replace(/^[a-z0-9-]+\//, "").replace(/-\d{8}$/, "");
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-ink-3">
+      {meta.engine === "jev" ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-heat-wash px-1.5 py-0.5 font-medium text-heat">
+          <Lightning size={10} weight="fill" />
+          Jev fast path, {seconds(meta.ms)}
+        </span>
+      ) : (
+        <span>
+          {model ?? "LLM"}, {seconds(meta.ms)}
+        </span>
+      )}
+      {meta.note && <span>{meta.note}</span>}
+    </div>
+  );
+}
+
 /** Shown while the model is composing its next reply or step. */
 function TypingIndicator({ label }: { label: string }) {
   const reduce = useReducedMotion();
@@ -266,7 +288,12 @@ function EntryView({ entry, onConfirm }: { entry: Entry; onConfirm: (id: string,
         </div>
       );
     case "assistant":
-      return <div className="text-sm leading-relaxed text-ink">{renderText(entry.text)}</div>;
+      return (
+        <div>
+          <div className="text-sm leading-relaxed text-ink">{renderText(entry.text)}</div>
+          {entry.meta && <MetaLine meta={entry.meta} />}
+        </div>
+      );
     case "step": {
       const s = entry.step;
       return (

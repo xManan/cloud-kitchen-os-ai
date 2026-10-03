@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus, Trash } from "@phosphor-icons/react";
+import { Lightning, Plus, Trash } from "@phosphor-icons/react";
 import { Button, Field, IconButton, Input, Select, Textarea } from "@/components/ui";
+import { useExpenseCategorySuggestion } from "@/lib/agent/jev-features";
 import { fmtMoney } from "@/lib/analytics";
 import { BRANDS } from "@/lib/data/seed";
 import * as S from "@/lib/schemas";
@@ -379,6 +380,25 @@ export function InvoiceForm() {
 
 // ---------------- Finance ----------------
 
+/** Jev reads the vendor and note as you type and suggests a category. */
+function CategorySuggestion({ api }: { api: FormApi }) {
+  const vendor = (api.form.watch("vendor") as string) ?? "";
+  const note = (api.form.watch("note") as string) ?? "";
+  const current = api.form.watch("category") as string;
+  const s = useExpenseCategorySuggestion(vendor, note);
+  if (!s || s.category === current) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => api.form.setValue("category", s.category, { shouldDirty: true })}
+      className="inline-flex w-fit cursor-pointer items-center gap-1 text-xs text-heat hover:underline"
+    >
+      <Lightning size={11} weight="fill" />
+      Jev suggests {s.category}. Use it
+    </button>
+  );
+}
+
 export function ExpenseForm() {
   return (
     <FormSheet
@@ -399,6 +419,7 @@ export function ExpenseForm() {
                   <option key={c}>{c}</option>
                 ))}
               </Select>
+              <CategorySuggestion api={api} />
             </Field>
             <Field label="Amount" htmlFor="amount" error={api.err("amount")}>
               <Input id="amount" data-label="amount" inputMode="decimal" {...api.form.register("amount")} aria-invalid={!!api.err("amount")} />

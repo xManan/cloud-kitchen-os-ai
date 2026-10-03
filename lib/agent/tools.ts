@@ -548,11 +548,16 @@ export const TOOLS: ToolDef[] = [
     name: "list_reviews",
     kind: "read",
     title: () => "Reading reviews",
-    description: "Customer reviews from DashBite and FoodRun with rating, text and any reply.",
-    schema: z.object({ maxRating: z.number().int().min(1).max(5).optional(), unrepliedOnly: z.boolean().default(false) }),
+    description: "Customer reviews from DashBite and FoodRun with rating, text, any reply, and Jev's topic and urgency tags (urgency 0 to 1). Sorted most urgent first.",
+    schema: z.object({
+      maxRating: z.number().int().min(1).max(5).optional(),
+      unrepliedOnly: z.boolean().default(false),
+      urgentOnly: z.boolean().default(false).describe("Only reviews Jev tagged as needing a reply today"),
+    }),
     run: (a) =>
       k()
-        .reviews.filter((r) => (!a.maxRating || r.rating <= a.maxRating) && (!a.unrepliedOnly || !r.reply))
+        .reviews.filter((r) => (!a.maxRating || r.rating <= a.maxRating) && (!a.unrepliedOnly || !r.reply) && (!a.urgentOnly || (r.urgency ?? 0) >= 0.6))
+        .sort((x, y) => (y.urgency ?? 0) - (x.urgency ?? 0))
         .map((r) => ({ ...r, brand: A.brandName(r.brandId) })),
   }),
   defineTool({
