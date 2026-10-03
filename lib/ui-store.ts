@@ -19,9 +19,9 @@ interface UIState {
 
 function readTheme(): Theme {
   try {
-    return (localStorage.getItem("kos-theme") as Theme) || "system";
+    return (localStorage.getItem("kos-theme") as Theme) || "light";
   } catch {
-    return "system";
+    return "light";
   }
 }
 
@@ -37,7 +37,7 @@ export const useUI = create<UIState>()((set) => ({
   closeForm: () => set({ form: null }),
   dockOpen: false,
   setDockOpen: (dockOpen) => set({ dockOpen }),
-  theme: typeof window === "undefined" ? "system" : readTheme(),
+  theme: typeof window === "undefined" ? "light" : readTheme(),
   setTheme: (theme) => {
     try {
       localStorage.setItem("kos-theme", theme);

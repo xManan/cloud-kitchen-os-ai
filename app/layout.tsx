@@ -15,17 +15,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#e9edf0" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e1316" },
-  ],
+  themeColor: "#e9edf0",
 };
 
-const themeScript = `try{var t=localStorage.getItem("kos-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+// Light is the default. A saved choice of dark or system overrides it before first paint.
+const themeScript = `try{var t=localStorage.getItem("kos-theme"),r=document.documentElement;if(t==="dark")r.setAttribute("data-theme","dark");else if(t==="system")r.removeAttribute("data-theme")}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
