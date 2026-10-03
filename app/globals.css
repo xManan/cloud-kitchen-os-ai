@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+  --steel: #e9edf0;
+  --paper: #ffffff;
+  --paper-2: #f5f7f8;
+  --ink: #15212b;
+  --ink-2: #4a5864;
+  --ink-3: #6e7b86;
+  --rule: #d3dae0;
+  --rule-strong: #b9c3cb;
+  --heat: #c2410c;
+  --heat-hover: #a8380a;
+  --heat-ink: #ffffff;
+  --heat-wash: #fcebe1;
+  --good: #0b8a3e;
+  --good-wash: #e3f4ea;
+  --warn: #b26b00;
+  --warn-wash: #fbf0dc;
+  --bad: #c62828;
+  --bad-wash: #fbe5e5;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --grid: #e3e8ec;
+  --shadow: 0 1px 2px rgb(21 33 43 / 0.06), 0 8px 24px -12px rgb(21 33 43 / 0.18);
+  --dock: #15212b;
+  --dock-ink: #ffffff;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --steel: #0e1316;
+    --paper: #161c20;
+    --paper-2: #1c2328;
+    --ink: #ecf0f2;
+    --ink-2: #a9b4bc;
+    --ink-3: #7f8b94;
+    --rule: #273038;
+    --rule-strong: #36414a;
+    --heat: #f0743a;
+    --heat-hover: #f48a57;
+    --heat-ink: #1a0d06;
+    --heat-wash: #3a2015;
+    --good: #3fbf6f;
+    --good-wash: #143223;
+    --warn: #e6a23c;
+    --warn-wash: #33270f;
+    --bad: #f06a6a;
+    --bad-wash: #3a1a1a;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --grid: #232b31;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.6);
+    --dock: #263038;
+    --dock-ink: #ecf0f2;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --steel: #0e1316;
+  --paper: #161c20;
+  --paper-2: #1c2328;
+  --ink: #ecf0f2;
+  --ink-2: #a9b4bc;
+  --ink-3: #7f8b94;
+  --rule: #273038;
+  --rule-strong: #36414a;
+  --heat: #f0743a;
+  --heat-hover: #f48a57;
+  --heat-ink: #1a0d06;
+  --heat-wash: #3a2015;
+  --good: #3fbf6f;
+  --good-wash: #143223;
+  --warn: #e6a23c;
+  --warn-wash: #33270f;
+  --bad: #f06a6a;
+  --bad-wash: #3a1a1a;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --grid: #232b31;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --dock: #263038;
+  --dock-ink: #ecf0f2;
+}
+
+@theme inline {
+  --color-steel: var(--steel);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-dock: var(--dock);
+  --color-dock-ink: var(--dock-ink);
+  --color-heat: var(--heat);
+  --color-heat-hover: var(--heat-hover);
+  --color-heat-ink: var(--heat-ink);
+  --color-heat-wash: var(--heat-wash);
+  --color-good: var(--good);
+  --color-good-wash: var(--good-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-bad: var(--bad);
+  --color-bad-wash: var(--bad-wash);
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-bricolage), var(--font-geist), sans-serif;
+  --radius-panel: 12px;
+  --radius-control: 8px;
+  --shadow-lift: var(--shadow);
+}
+
+html,
+body {
+  background: var(--steel);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--heat);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--heat-wash);
+  color: var(--ink);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Printed order ticket: the perforated top edge is the one decorative device. */
+.ticket {
+  position: relative;
+  border-radius: 4px;
+  background: var(--paper);
+}
+.ticket::before {
+  content: "";
+  position: absolute;
+  inset: -4px 0 auto 0;
+  height: 8px;
+  background: radial-gradient(circle at 5px 0, var(--steel) 3.5px, transparent 4px) 0 0 / 10px 8px repeat-x;
+  pointer-events: none;
+}
+
+/* Agent-driven field highlight */
+[data-agent-active="true"] {
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--heat) !important;
+  transition: box-shadow 140ms var(--ease);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 45%, transparent); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
+.live-dot {
+  animation: live-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes sheet-in {
+  from { transform: translateX(28px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
