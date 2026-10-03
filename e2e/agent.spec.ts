@@ -43,3 +43,18 @@ test("Navigation request opens the page", async ({ page }) => {
   await ask(page, "Open finance");
   await expect(page).toHaveURL(/\/finance$/);
 });
+
+test("Typing indicator shows while the model is replying", async ({ page }) => {
+  // Slow the model call down so the waiting state is observable.
+  await page.route("**/api/chat", async (route) => {
+    await new Promise((r) => setTimeout(r, 800));
+    await route.continue();
+  });
+  await page.keyboard.press("/");
+  await page.fill("#agent-input", "How are sales this week?");
+  await page.keyboard.press("Enter");
+  const status = page.locator('[data-agent-dock] [role="status"]');
+  await expect(status).toBeVisible();
+  await expect(page.locator("[data-agent-dock]")).toContainText("Last 7 days", { timeout: 20_000 });
+  await expect(status).toHaveCount(0);
+});

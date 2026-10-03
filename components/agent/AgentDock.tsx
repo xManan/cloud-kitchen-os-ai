@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUp, Broom, Check, CircleNotch, Minus, Stop, WarningCircle, Globe } from "@phosphor-icons/react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Button, IconButton, Segmented, cn } from "@/components/ui";
@@ -51,9 +51,16 @@ export function AgentDock() {
     return () => window.removeEventListener("keydown", onKey);
   }, [setOpen, running, stop]);
 
+  const currentStep = [...entries].reverse().find((e) => e.role === "step" && e.step.status === "running");
+  const awaitingConfirm = entries.some((e) => e.role === "confirm" && e.state === "pending");
+  // Waiting on the model: running, but no tool step is executing and nothing needs the user.
+  const thinking = running && !currentStep && !awaitingConfirm;
+  const lastUser = entries.map((e) => e.role).lastIndexOf("user");
+  const stepsThisTurn = entries.slice(lastUser + 1).some((e) => e.role === "step");
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [entries.length, entries]);
+  }, [entries.length, entries, thinking]);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 80);
@@ -65,7 +72,6 @@ export function AgentDock() {
     send(value.trim());
   };
 
-  const currentStep = [...entries].reverse().find((e) => e.role === "step" && e.step.status === "running");
   const suggestions = SUGGESTIONS[pathname] ?? SUGGESTIONS.default;
 
   return (
@@ -87,7 +93,7 @@ export function AgentDock() {
             aria-label={driving ? "Agent is working. Click to stop" : "Open the Kitchen OS agent"}
           >
             <Orb busy={running} />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium">{running && currentStep?.role === "step" ? currentStep.step.title : "Ask Kitchen OS"}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">{running && currentStep?.role === "step" ? currentStep.step.title : thinking ? "Thinking" : "Ask Kitchen OS"}</span>
             {driving ? (
               <Stop size={14} weight="fill" className="shrink-0 text-dock-ink/80" />
             ) : (
@@ -157,6 +163,7 @@ export function AgentDock() {
               ) : (
                 entries.map((e) => <EntryView key={e.id} entry={e} onConfirm={answerConfirm} />)
               )}
+              <AnimatePresence>{thinking && <TypingIndicator key="typing" label={stepsThisTurn ? "Working on the next step" : "Thinking"} />}</AnimatePresence>
             </div>
 
             <form
@@ -204,6 +211,36 @@ export function AgentDock() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** Shown while the model is composing its next reply or step. */
+function TypingIndicator({ label }: { label: string }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      role="status"
+      className="flex items-center gap-2.5 py-1"
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      transition={{ duration: 0.16, ease: [0.05, 0.7, 0.1, 1] }}
+    >
+      <span className="sr-only">Kitchen OS agent is thinking</span>
+      <span className="flex h-4 items-center gap-1" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="size-1.5 rounded-full bg-ink-3"
+            animate={reduce ? undefined : { y: [0, -3, 0], opacity: [0.45, 1, 0.45] }}
+            transition={reduce ? undefined : { duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+          />
+        ))}
+      </span>
+      <span className="text-[13px] text-ink-3" aria-hidden>
+        {label}
+      </span>
+    </motion.div>
   );
 }
 
