@@ -1,6 +1,7 @@
 "use client";
 
 import * as A from "@/lib/analytics";
+import { withBase } from "@/lib/base-path";
 import { getKitchen } from "@/lib/store";
 import { getCurrentPath } from "./driver";
 import type { JevQuestions, JevResult } from "./jev-types";
@@ -10,7 +11,7 @@ import { PAGES, TOOLS } from "./tools";
 export async function askJev(state: string, questions: JevQuestions, signal?: AbortSignal): Promise<JevResult> {
   const { settings } = getKitchen();
   const t0 = performance.now();
-  const res = await fetch("/api/jev", {
+  const res = await fetch(withBase("/api/jev"), {
     method: "POST",
     signal,
     headers: { "content-type": "application/json", ...(settings.openrouterKey ? { "x-openrouter-key": settings.openrouterKey } : {}) },

@@ -20,6 +20,8 @@ With no key, the agent runs in **demo mode**: a scripted planner that speaks the
 
 To change the model, type an OpenRouter model id in **Settings → AI agent → Model**; it takes effect on the next message. Leave it empty to use `OPENROUTER_MODEL` from `.env.local` (default `anthropic/claude-sonnet-5.5`). A model set in Settings wins over the env value.
 
+To serve the app under a path such as `your-domain/cloud-kitchen-os`, set `NEXT_PUBLIC_BASE_PATH=/cloud-kitchen-os` (in `.env.local` or your host's environment variables) and rebuild. The bare domain then redirects to the prefix.
+
 Demo data is seeded per browser and kept in localStorage. Use **Settings → Reset demo data** to start fresh.
 
 ## Things to try

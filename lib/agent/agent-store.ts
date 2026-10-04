@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { withBase } from "@/lib/base-path";
 import { getKitchen } from "@/lib/store";
 import { buildSystemPrompt } from "./capabilities";
 import { AgentAborted, abortRun, beginRun, hideCursor } from "./driver";
@@ -144,7 +145,7 @@ export const useAgent = create<AgentState>()((set, get) => {
 
         for (let step = 0; step < MAX_STEPS; step++) {
           const { settings } = getKitchen();
-          const res = await fetch("/api/chat", {
+          const res = await fetch(withBase("/api/chat"), {
             method: "POST",
             signal: ctl.signal,
             headers: { "content-type": "application/json", ...(settings.openrouterKey ? { "x-openrouter-key": settings.openrouterKey } : {}) },
