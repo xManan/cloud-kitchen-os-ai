@@ -5,7 +5,12 @@ import { normalise, type JevAnswer, type JevQuestions } from "@/lib/agent/jev-ty
 export const runtime = "nodejs";
 
 const SYSTEM_ONE_URL = "https://openrouter.ai/api/v1/systemone";
-const DEFAULT_JEV = process.env.JEV_MODEL || "jev-latest";
+/** "jev" alone is not a model on OpenRouter, so treat it (and empty) as the latest release. */
+const jevModel = (id?: string) => {
+  const m = id?.trim();
+  return !m || m === "jev" || m === "typesafe/jev" ? "jev-latest" : m;
+};
+const DEFAULT_JEV = jevModel(process.env.JEV_MODEL);
 
 /**
  * Proxy to OpenRouter's System One API for Jev. Same key handling as /api/chat:
@@ -37,7 +42,7 @@ export async function POST(req: Request) {
       "HTTP-Referer": req.headers.get("origin") ?? "http://localhost:3000",
       "X-Title": "Kitchen OS demo",
     },
-    body: JSON.stringify({ model: body.model || DEFAULT_JEV, state: body.state, questions: body.questions }),
+    body: JSON.stringify({ model: body.model ? jevModel(body.model) : DEFAULT_JEV, state: body.state, questions: body.questions }),
   }).catch((e: unknown) => e as Error);
 
   if (res instanceof Error) return NextResponse.json({ error: `Could not reach Jev: ${res.message}` }, { status: 502 });
